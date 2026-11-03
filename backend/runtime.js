@@ -64,11 +64,15 @@ export function database() {
     max: 2,
     connectionTimeoutMillis: 8000,
     idleTimeoutMillis: 15000,
-    ssl: {
-      rejectUnauthorized: true,
-      ...(process.env.DATABASE_CA
-        ? { ca: process.env.DATABASE_CA.replaceAll("\\n", "\n") }
-        : {}),
-    },
+    ssl:
+      process.env.DATABASE_SSL === "railway-private" &&
+      connection.hostname.endsWith(".railway.internal")
+        ? false
+        : {
+            rejectUnauthorized: true,
+            ...(process.env.DATABASE_CA
+              ? { ca: process.env.DATABASE_CA.replaceAll("\\n", "\n") }
+              : {}),
+          },
   }));
 }

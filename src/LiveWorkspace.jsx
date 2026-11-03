@@ -1,3 +1,4 @@
+import { subscribeDevice } from "./subscribeDevice";
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import App from "./App";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 
 const configured = Boolean(
   import.meta.env.VITE_SUPABASE_URL &&
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
 );
 let client;
 function auth() {
@@ -43,26 +44,7 @@ async function api(path, body) {
     });
   return result;
 }
-export async function registerDevice(key) {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window))
-    throw Error(
-      "Push is unavailable in this browser. On iPhone, open the app from the Home Screen.",
-    );
-  if ((await Notification.requestPermission()) !== "granted")
-    throw Error("Notification permission was not granted.");
-  await navigator.serviceWorker.register("/sw.js");
-  const reg = await navigator.serviceWorker.ready;
-  const sub =
-    (await reg.pushManager.getSubscription()) ||
-    (await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: Uint8Array.from(
-        atob(key.replace(/-/g, "+").replace(/_/g, "/")),
-        (c) => c.charCodeAt(0),
-      ),
-    }));
-  await api("device", sub.toJSON());
-}
+export const registerDevice = (key) => subscribeDevice(key, api);
 export default function LiveWorkspace() {
   const [preview, setPreview] = useState(false),
     [sending, setSending] = useState(false);

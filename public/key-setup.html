@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Set up your key · RentKeep</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font:
+          16px/1.5 system-ui,
+          sans-serif;
+        color: #162d29;
+        background: #fafcfb;
+        margin: 0;
+      }
+      main {
+        max-width: 32rem;
+        margin: 6vh auto;
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 2rem;
+        line-height: 1.15;
+      }
+      small {
+        color: #345951;
+        letter-spacing: 0.12em;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-top: 1rem;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.65rem;
+        border: 1px solid #708b83;
+        border-radius: 0.45rem;
+        font: inherit;
+      }
+      button {
+        margin: 0.6rem 0.4rem 0.4rem 0;
+        padding: 0.65rem 0.85rem;
+        border: 0;
+        border-radius: 0.4rem;
+        background: #154e43;
+        color: white;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #216455;
+      }
+      a {
+        color: #155345;
+      }
+      textarea {
+        font-family: monospace;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #967118;
+      }
+    </style>
+    <script defer src="/key-setup.js"></script>
+  </head>
+  <body>
+    <main>
+      <small>P&amp;O ENTERPRISE</small>
+      <h1>Set up your sign-in key</h1>
+      <p>
+        Generate a key here, or use your password manager to generate 43 random
+        letters and numbers. Save it with your email under this RentKeep web
+        address.
+      </p>
+      <label for="email">Your administrator email</label
+      ><input id="email" type="email" autocomplete="username" />
+      <label for="key">Private sign-in key</label
+      ><input
+        id="key"
+        type="password"
+        autocomplete="new-password"
+        spellcheck="false"
+      />
+      <button id="generate">Generate key</button
+      ><button id="save">Save to password manager</button
+      ><button id="show">Show key</button>
+      <p>
+        Once your key is saved, get its verification hash. Share only the hash
+        and your email with the Railway project owner. Generating a key does not
+        grant access.
+      </p>
+      <button id="verify">Get verification hash</button>
+      <label for="hash">Verification hash</label
+      ><textarea id="hash" rows="3" readonly></textarea>
+      <p role="status" id="status"></p>
+      <p><a href="/">Return to RentKeep</a></p>
+    </main>
+  </body>
+</html>

@@ -2,7 +2,11 @@
 
 Rental administration for P&O Enterprise in Ghana. RentKeep tracks rooms, tenancy terms, contacts, renewals, invoices, externally verified payments and receipts. Live accounting uses Ghana cedis (GHS) stored as integer pesewas. The four administrator slots are the primary administrator, Mum and two siblings. Each signs in with their own email. All four can administer records. Only the first two receive external renewal reminders.
 
-## Deploy from GitHub to Netlify
+## Deploy on Railway (recommended)
+
+Use [the Railway setup guide](RAILWAY.md) to run the interface, API, four admin sign-ins and reminder scheduler together, backed by Railway PostgreSQL.
+
+## Alternative: Netlify
 
 1. Import this repository into Netlify and deploy the main branch. The root `netlify.toml` sets Node 24, the build command, the publish directory, the API and the scheduled function. A Netlify-provided HTTPS address is sufficient.
 2. On a first deployment without sign-in configuration the site offers an explicitly fictional browser-local demo. You can use this to review the mobile interface immediately.

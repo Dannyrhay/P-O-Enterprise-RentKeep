@@ -1,4 +1,6 @@
-# Live deployment
+# Alternative deployment: Netlify
+
+For the single-provider deployment, see [the Railway guide](RAILWAY.md).
 
 Use a separate production Netlify site and Supabase project for P&O Enterprise. Deploy the repository root. Netlify applies the build settings in netlify.toml. Use the generated HTTPS domain as the sign-in redirect until you have a custom domain.
 

@@ -16,3 +16,9 @@ Checked 3 November 2026. The local checks cover a release candidate for deployme
 ## Before live tenant data
 
 Follow [DEPLOYMENT.md](DEPLOYMENT.md). Real identity-provider email, deployed cross-device access, actual push and fallback email delivery, provider backup recovery, and the final business wording of Ghana invoices and receipts must be verified by the operator. A provider acceptance response does not verify delivery to a handset. This review was not an independent penetration test.
+
+## Railway release
+
+The Railway production frontend built successfully on Node 24. All ten automated tests passed, including a real loopback HTTP server backed by an in-process PostgreSQL engine: four sign-ins, cross-account shared data, denial of anonymous and unapproved access, cross-origin write rejection, logout and key rotation. The production dependency audit returned zero known vulnerabilities. A browser check exercised key generation and verification hashing without printing credentials. Password-manager integration depends on browser support and still needs verification on the actual phones.
+
+The Railway container has not been deployed or tested against a live Railway database. Docker Desktop's engine was unavailable locally. Before entering real data, follow RAILWAY.md to validate the image, database grants, backups, cross-device access, and background push on both phones. Current login is email plus a high-entropy key, not mailbox verification or invitation-based onboarding. Review the global login throttle (per replica), single-row workspace write contention, one-reminder-per-check throughput, and actual delivery monitoring before expanding beyond the family workspace.

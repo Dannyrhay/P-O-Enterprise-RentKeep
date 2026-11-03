@@ -17,3 +17,4 @@ CREATE TABLE IF NOT EXISTS rentkeep.deliveries (
   attempts integer NOT NULL DEFAULT 0, next_attempt timestamptz NOT NULL DEFAULT now(),
   channel text, accepted_at timestamptz
 );
+CREATE TABLE IF NOT EXISTS rentkeep.sessions (digest text PRIMARY KEY, account text NOT NULL, key_hash text NOT NULL, expires_at timestamptz NOT NULL);

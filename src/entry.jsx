@@ -2,9 +2,11 @@ import React, { Suspense, lazy, useEffect, useState } from "react";
 import Opening from "./Opening";
 import "./styles.css";
 const Workspace =
-  import.meta.env.VITE_RENTKEEP_MODE === "live"
-    ? lazy(() => import("./LiveWorkspace"))
-    : lazy(() => import("./App"));
+  import.meta.env.VITE_RENTKEEP_MODE === "railway"
+    ? lazy(() => import("./RailwayWorkspace"))
+    : import.meta.env.VITE_RENTKEEP_MODE === "live"
+      ? lazy(() => import("./LiveWorkspace"))
+      : lazy(() => import("./App"));
 export default function Entry() {
   const [opening, setOpening] = useState(() => {
     try {
