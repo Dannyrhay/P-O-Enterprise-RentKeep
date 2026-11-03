@@ -1,5 +1,12 @@
 import { z } from "zod";
-import { shiftMonths, today, recordPayment } from "../src/domain.js";
+import {
+  shiftMonths,
+  today,
+  recordPayment,
+  saveUnit,
+  unitLabel,
+  unitTypes,
+} from "../src/domain.js";
 
 const name = z.string().trim().min(1).max(100);
 const id = z.string().min(1).max(64);
@@ -23,7 +30,12 @@ const details = z.object({
   frequency: z.enum(["year", "month", "tenancy"]),
 });
 const schemas = {
-  room: z.object({ name, note: z.string().trim().max(200) }),
+  room: z.object({
+    name,
+    location: name.optional(),
+    kind: z.enum(unitTypes).optional(),
+    note: z.string().trim().max(200),
+  }),
   tenancy: details,
   edit: details,
   archive: z.object({ confirmed: z.literal(true) }),
@@ -79,11 +91,7 @@ export function executeCommand(state, action, actor) {
   const newId = () => crypto.randomUUID();
   switch (action.type) {
     case "room":
-      if (
-        state.rooms.some((r) => r.name.toLowerCase() === d.name.toLowerCase())
-      )
-        throw Error("Room name already exists.");
-      state.rooms.push({ ...d, id: newId() });
+      saveUnit(state.rooms, d, action.id);
       break;
     case "tenancy":
     case "edit": {
@@ -133,7 +141,7 @@ export function executeCommand(state, action, actor) {
         id: newId(),
         number: "INV-" + String(state.invoices.length + 1).padStart(4, "0"),
         name: t.name,
-        room: state.rooms.find((r) => r.id === t.roomId).name,
+        room: unitLabel(state.rooms.find((r) => r.id === t.roomId)),
         currency: "GHS",
         date: today(),
       });

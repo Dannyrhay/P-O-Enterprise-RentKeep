@@ -194,3 +194,20 @@ test("push endpoints cannot target arbitrary or local services", () => {
     keys.auth,
   );
 });
+
+test("classifying existing units preserves tenancy links and issued documents; names are unique per location", async () => {
+  const {executeCommand,newWorkspace}=await import("../backend/commands.js");
+  const state=newWorkspace(admins);
+  state.rooms.push({id:"legacy",name:"Unit 1",note:"ground floor"});
+  state.tenancies.push({id:"t1",roomId:"legacy",name:"Demo",archived:false});
+  state.invoices.push({id:"i1",room:"Unit 1",tenancyId:"t1"});
+  const assign=(id,location,kind)=>executeCommand(state,{type:"room",id,data:{name:"Unit 1",note:"ground floor",location,kind}},actor);
+  assign("legacy","Market Road","Shop");
+  assign(null,"Garden Road","Apartment");
+  assert.throws(()=>assign(null,"market road","Room"),/unique/);
+  assert.equal(state.rooms.length,2);
+  assert.equal(state.rooms[0].kind,"Shop");
+  assert.equal(state.rooms[0].id,state.tenancies[0].roomId);
+  assert.equal(state.invoices[0].room,"Unit 1");
+  assert.equal(state.rooms[1].location,"Garden Road");
+});

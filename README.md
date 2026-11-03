@@ -15,7 +15,7 @@ Use [the Railway setup guide](RAILWAY.md) to run the interface, API, four admin 
 
 ## Workflows
 
-- Add any number of rooms. Record tenant contacts, rental amount, billing period and a one-, two- or three-year tenancy. Inspect days remaining, edit terms and archive a departed tenant without deleting history.
+- In **Locations & tenants**, add a unit with a location and a rental type (shop, apartment or room). Reuse a location for additional units. To classify existing records, open **Location not assigned** and select **Edit unit**. Unit names can repeat at different locations. Record tenant contacts, rental amount, billing period and a one-, two- or three-year tenancy. Inspect days remaining, edit terms and archive a departed tenant without deleting history.
 - Renewing closes the old administrative record and opens the agreed new term immediately. Its start and end dates remain explicit. Historical invoices and receipts stay linked to the original tenancy.
 - Create an invoice, verify receipt in the bank or mobile money account, and then record the amount received, date, method and external transaction reference. Each verified partial or full payment has its own printable or downloadable receipt. RentKeep never processes money.
 - Review renewal notices in-app. The default windows are six and three calendar months before end. Configure push as primary and email as fallback. Tenant messaging is disabled.

@@ -58,12 +58,15 @@ import {
   recordPayment,
   reminder,
   seed,
+  unitLabel,
+  unitTypes,
+  saveUnit,
 } from "./domain.js";
 import "./styles.css";
 const KEY = "rentkeep-demo-v1";
 const nav = [
   ["overview", LayoutDashboard, "Overview"],
-  ["rooms", DoorOpen, "Rooms & tenants"],
+  ["rooms", DoorOpen, "Locations & tenants"],
   ["payments", Wallet, "Payments"],
   ["reminders", CalendarClock, "Reminders"],
   ["settings", Settings2, "Settings"],
@@ -273,8 +276,7 @@ export default function App({ live = null }) {
   const occupied = new Set(active.map((t) => t.roomId)).size;
   const alerts = active.filter((t) => reminder(t, state.settings.months));
   const open = state.invoices.filter((i) => balance(i, state.payments) > 0);
-  const room = (t) =>
-    state.rooms.find((r) => r.id === t.roomId)?.name || "Room";
+  const room = (t) => unitLabel(state.rooms.find((r) => r.id === t.roomId));
   const remaining = (t) =>
     daysLeft(t.end) < 0
       ? `${Math.abs(daysLeft(t.end))} days past end`
@@ -318,7 +320,7 @@ export default function App({ live = null }) {
       type === "tenancy" &&
       !state.rooms.some((r) => !active.some((t) => t.roomId === r.id))
     ) {
-      toast.info("Add a room or archive a departed tenancy first.");
+      toast.info("Add a unit or archive a departed tenancy first.");
       return;
     }
     setModal({ type, id });
@@ -433,7 +435,7 @@ export default function App({ live = null }) {
         <Heading
           eyebrow="YOUR RENTAL WORKSPACE"
           title="Overview"
-          description="Your rooms, payments and upcoming renewals — all together."
+          description="Your rental units, payments and upcoming renewals — all together."
         >
           <Button onClick={() => show("tenancy")}>
             <Plus />
@@ -443,9 +445,9 @@ export default function App({ live = null }) {
         <div className="stats-grid">
           {[
             [
-              "Rooms occupied",
+              "Units occupied",
               `${occupied}`,
-              `of ${state.rooms.length} rooms`,
+              `of ${state.rooms.length} units`,
               DoorOpen,
               `${state.rooms.length - occupied} available`,
             ],
@@ -534,7 +536,7 @@ export default function App({ live = null }) {
             {!alerts.length && <Empty>No renewals need attention today.</Empty>}
           </Surface>
           <Surface
-            title="Your rooms"
+            title="Your rental units"
             action={
               <Pill>
                 {Math.round((occupied / (state.rooms.length || 1)) * 100)}%
@@ -551,7 +553,7 @@ export default function App({ live = null }) {
                       "room-tile " +
                       (active.some((t) => t.roomId === r.id) ? "" : "vacant")
                     }
-                    aria-label={`${r.name}, ${active.some((t) => t.roomId === r.id) ? "occupied" : "available"}`}
+                    aria-label={`${unitLabel(r)}, ${active.some((t) => t.roomId === r.id) ? "occupied" : "available"}`}
                     onClick={() => {
                       const t = active.find((t) => t.roomId === r.id);
                       t ? view(t) : show("tenancy", r.id);
@@ -570,7 +572,7 @@ export default function App({ live = null }) {
                   className="text-[10px] flex gap-1 items-center text-[#5e7850]"
                   onClick={() => navigate("rooms")}
                 >
-                  Manage rooms
+                  Manage units
                   <ChevronRight className="size-3" />
                 </button>
               </div>
@@ -619,20 +621,27 @@ export default function App({ live = null }) {
             t: list.find((t) => t.roomId === r.id),
           }))
     ).filter(({ r, t }) =>
-      (r.name + " " + (t?.name || ""))
+      [unitLabel(r), r.kind || "Room", t?.name]
+        .join(" ")
         .toLowerCase()
         .includes(search.toLowerCase()),
     );
+    const groups = new Map();
+    for (const card of cards) {
+      const key = card.r.location || "";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(card);
+    }
     return (
       <>
         <Heading
           eyebrow="A PLACE FOR EVERY TENANT"
-          title="Rooms & tenants"
+          title="Locations & tenants"
           description="The important details, from move-in to the next renewal."
         >
           <Button onClick={() => show("room")}>
             <Plus />
-            Add room
+            Add unit
           </Button>
         </Heading>
         <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
@@ -641,8 +650,8 @@ export default function App({ live = null }) {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tenants or rooms"
-              aria-label="Search tenants or rooms"
+              placeholder="Search location, unit or tenant"
+              aria-label="Search location, unit or tenant"
               className="pl-9 bg-white h-10"
             />
           </div>
@@ -661,69 +670,91 @@ export default function App({ live = null }) {
             ))}
           </div>
         </div>
-        <div className="room-grid">
-          {cards.map(({ r, t }) => (
-            <Surface key={t?.id || r.id} className="room-card">
-              <div className="flex items-center justify-between">
-                <div className="bg-[#f0f4ec] text-[#7c926d] rounded-lg p-3">
-                  <DoorOpen className="size-5" />
-                </div>
-                <Pill tone={t ? (t.archived ? "gray" : "") : "amber"}>
-                  {t ? (t.archived ? "Archived" : "Occupied") : "Available"}
-                </Pill>
-              </div>
-              <h2 className="text-base font-semibold mt-5 tracking-tight">
-                {r.name}
+        {Array.from(groups)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([location, units]) => (
+            <section key={location} className="mb-8">
+              <h2 className="text-lg font-semibold mb-3">
+                {location || "Location not assigned"}
               </h2>
-              <p className="quiet text-[11px] mt-1">{r.note}</p>
-              <div className="room-card-line" />
-              {t ? (
-                <>
-                  <Person name={t.name} sub={`${t.term}-year tenancy`} />
-                  <div className="room-detail-line mt-5">
-                    <span className="text-[#8b9684]">
-                      Rent per {t.frequency}
-                    </span>
-                    <span className="font-medium">
-                      {money(t.rent, state.settings.currency)}
-                    </span>
-                  </div>
-                  <div className="room-detail-line">
-                    <span className="text-[#8b9684]">Tenancy ends</span>
-                    <span>{date(t.end)}</span>
-                  </div>
-                  <Button
-                    className="w-full mt-4 justify-between"
-                    variant="outline"
-                    onClick={() => view(t)}
-                  >
-                    View tenancy
-                    <ArrowRight />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-sm font-medium">
-                    Ready for a new tenant
-                  </h3>
-                  <p className="quiet mt-2 mb-8">
-                    Keep contacts, rent and dates
-                    <br />
-                    in one organised place.
-                  </p>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                    onClick={() => show("tenancy", r.id)}
-                  >
-                    <Plus />
-                    Add tenancy
-                  </Button>
-                </>
-              )}
-            </Surface>
+              <div className="room-grid">
+                {units.map(({ r, t }) => (
+                  <Surface key={t?.id || r.id} className="room-card">
+                    <div className="flex items-center justify-between">
+                      <div className="bg-[#f0f4ec] text-[#7c926d] rounded-lg p-3">
+                        <DoorOpen className="size-5" />
+                      </div>
+                      <Pill tone={t ? (t.archived ? "gray" : "") : "amber"}>
+                        {t
+                          ? t.archived
+                            ? "Archived"
+                            : "Occupied"
+                          : "Available"}
+                      </Pill>
+                    </div>
+                    <h2 className="text-base font-semibold mt-5 tracking-tight">
+                      {r.name}
+                    </h2>
+                    <p className="quiet text-[11px] mt-1">
+                      {[r.kind || "Room", r.note].filter(Boolean).join(" · ")}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => show("room", r.id)}
+                    >
+                      Edit unit
+                    </Button>
+                    <div className="room-card-line" />
+                    {t ? (
+                      <>
+                        <Person name={t.name} sub={`${t.term}-year tenancy`} />
+                        <div className="room-detail-line mt-5">
+                          <span className="text-[#8b9684]">
+                            Rent per {t.frequency}
+                          </span>
+                          <span className="font-medium">
+                            {money(t.rent, state.settings.currency)}
+                          </span>
+                        </div>
+                        <div className="room-detail-line">
+                          <span className="text-[#8b9684]">Tenancy ends</span>
+                          <span>{date(t.end)}</span>
+                        </div>
+                        <Button
+                          className="w-full mt-4 justify-between"
+                          variant="outline"
+                          onClick={() => view(t)}
+                        >
+                          View tenancy
+                          <ArrowRight />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-sm font-medium">
+                          Ready for a new tenant
+                        </h3>
+                        <p className="quiet mt-2 mb-8">
+                          Keep contacts, rent and dates
+                          <br />
+                          in one organised place.
+                        </p>
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => show("tenancy", r.id)}
+                        >
+                          <Plus />
+                          Add tenancy
+                        </Button>
+                      </>
+                    )}
+                  </Surface>
+                ))}
+              </div>
+            </section>
           ))}
-        </div>
         {!cards.length && <Empty>No records match your search.</Empty>}
       </>
     );
@@ -746,7 +777,7 @@ export default function App({ live = null }) {
           onClick={() => navigate("rooms")}
         >
           <ArrowLeft />
-          Rooms & tenants
+          Locations & tenants
         </Button>
         <Heading
           eyebrow={room(t).toUpperCase()}
@@ -1206,15 +1237,7 @@ export default function App({ live = null }) {
         return;
       }
       if (type === "room") {
-        const name = f.get("name").trim();
-        if (
-          !name ||
-          state.rooms.some((r) => r.name.toLowerCase() === name.toLowerCase())
-        )
-          throw Error("Choose a unique room name.");
-        commit((s) =>
-          s.rooms.push({ id: crypto.randomUUID(), name, note: f.get("note") }),
-        );
+        commit((s) => saveUnit(s.rooms, Object.fromEntries(f), modal.id));
       }
       if (type === "tenancy" || type === "edit") {
         const d = Object.fromEntries(f);
@@ -1316,13 +1339,50 @@ export default function App({ live = null }) {
     if (!modal) return null;
     const t = current;
     switch (modal.type) {
-      case "room":
+      case "room": {
+        const unit = state.rooms.find((r) => r.id === modal.id);
+        const locations = [
+          ...new Set(state.rooms.map((r) => r.location).filter(Boolean)),
+        ].sort();
         return (
           <div className="space-y-5">
-            <Field label="Room name" name="name" required maxLength={50} />
-            <Field label="Location / note" name="note" maxLength={100} />
+            <Field
+              label="Location"
+              name="location"
+              required
+              maxLength={100}
+              defaultValue={unit?.location}
+              list="known-locations"
+              placeholder="Choose or enter a location"
+            />
+            <datalist id="known-locations">
+              {locations.map((v) => (
+                <option key={v} value={v} />
+              ))}
+            </datalist>
+            <Field label="Rental type">
+              <Select name="kind" defaultValue={unit?.kind || "Room"}>
+                {unitTypes.map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field
+              label="Unit name or number"
+              name="name"
+              required
+              maxLength={100}
+              defaultValue={unit?.name}
+            />
+            <Field
+              label="Notes"
+              name="note"
+              maxLength={200}
+              defaultValue={unit?.note}
+            />
           </div>
         );
+      }
       case "tenancy":
       case "edit":
         return (
@@ -1333,7 +1393,7 @@ export default function App({ live = null }) {
                 : "Demo workspace · Use fictional contact details."}
             </p>
             <div className="form-grid">
-              <Field label="Room">
+              <Field label="Rental unit">
                 <Select name="roomId" defaultValue={t?.roomId || modal.id}>
                   {state.rooms
                     .filter(
@@ -1343,7 +1403,7 @@ export default function App({ live = null }) {
                     )
                     .map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name}
+                        {unitLabel(r)}
                       </option>
                     ))}
                 </Select>
@@ -1578,7 +1638,7 @@ export default function App({ live = null }) {
     }
   }
   const titles = {
-    room: "Add a room",
+    room: "Add a rental unit",
     tenancy: "Add a tenancy",
     edit: "Edit tenancy",
     invoice: "Create invoice",
@@ -1589,7 +1649,7 @@ export default function App({ live = null }) {
     receipt: "Payment receipt",
   };
   const submits = {
-    room: "Add room",
+    room: "Save unit",
     tenancy: "Save tenancy",
     edit: "Save changes",
     invoice: "Create invoice",
@@ -1733,7 +1793,7 @@ export default function App({ live = null }) {
             onClick={() => navigate(k)}
           >
             <Icon />
-            {k === "rooms" ? "Rooms" : label}
+            {k === "rooms" ? "Locations" : label}
           </button>
         ))}
       </nav>
@@ -1746,7 +1806,9 @@ export default function App({ live = null }) {
         <DialogContent className="sm:max-w-[560px] max-h-[90dvh] overflow-y-auto p-6 gap-5">
           <DialogHeader>
             <DialogTitle className="text-xl tracking-tight">
-              {titles[modal?.type]}
+              {modal?.type === "room" && modal.id
+                ? "Edit unit"
+                : titles[modal?.type]}
             </DialogTitle>
             <DialogDescription className="text-xs">
               {["document", "receipt"].includes(modal?.type)

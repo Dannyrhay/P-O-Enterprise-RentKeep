@@ -8,7 +8,7 @@ async (page) => {
     await page.setViewportSize({width,height:900});
     const small=width<=760;
     const nav=page.getByRole('navigation',{name:small?'Mobile navigation':'Main navigation'});
-    for(const [label,title] of [['Overview','Overview'],[small?'Rooms':'Rooms & tenants','Rooms & tenants'],['Payments','Invoices & payments'],['Reminders','Renewal reminders'],['Settings','Settings']]){
+    for(const [label,title] of [['Overview','Overview'],[small?'Locations':'Locations & tenants','Locations & tenants'],['Payments','Invoices & payments'],['Reminders','Renewal reminders'],['Settings','Settings']]){
       await nav.getByRole('button',{name:new RegExp('^'+label)}).click();
       await page.getByRole('heading',{name:title,exact:true,level:1}).waitFor();
       const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
