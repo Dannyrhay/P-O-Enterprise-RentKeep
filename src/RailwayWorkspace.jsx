@@ -53,6 +53,7 @@ export default function RailwayWorkspace() {
         key={workspace.actor.email}
         live={{
           initial: workspace,
+          keySetupUrl: "/key-setup.html",
           api: request,
           registerDevice: (key) => subscribeDevice(key, request),
           signOut: async () => {
@@ -112,11 +113,6 @@ export default function RailwayWorkspace() {
           {busy ? "Opening workspace…" : "Sign in"}
         </Button>
       </form>
-      <p className="mt-5">
-        <a className="underline" href="/key-setup.html">
-          Set up a sign-in key
-        </a>
-      </p>
     </main>
   );
 }

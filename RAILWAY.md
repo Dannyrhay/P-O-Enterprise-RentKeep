@@ -20,15 +20,13 @@ Generate a random database-role password in a password manager and enter it at t
 
 Add a service from this GitHub repository, select main, and use the repository root. Railway reads railway.toml and builds the Dockerfile. In Networking, generate a public HTTPS domain (target the service's PORT; Railway supplies PORT). Use a single always-on replica; **disable serverless sleeping** so reminder checks continue while nobody visits. There is no separate worker to deploy. An initial unconfigured deployment can fail; apply all variables and redeploy.
 
-For phone setup, set RENTKEEP_SETUP_ONLY=true, generate the HTTPS domain and deploy. Only the key setup page is enabled. Each sibling opens it, generates a key there or in their password manager (43 random letters and digits), and saves it under the RentKeep domain. The Save button uses the device credential API where supported; otherwise add the login manually. Each sibling sends the owner **only their email and verification hash** via a trusted channel. Confirm whose hash you received. Set the four hashes below, remove RENTKEEP_SETUP_ONLY and redeploy to enable the workspace and reminders. The generator works locally on the device, does not register accounts and does not retain keys. In normal operation it remains available from the sign-in screen. To replace an existing key, repeat this process for that account and redeploy the new hash.
-
-Alternatively, on a trusted local machine with Node, run this command **once per administrator**:
+For first access or recovery, the project owner provisions each initial key privately. On a trusted machine with Node, run this command once per administrator:
 
 ```sh
 node scripts/admin-key.mjs
 ```
 
-Each run prints a new, random 256-bit private sign-in key and its SHA-256 verification hash. Give only that person's key to them using a password manager's secure share. They use their exact approved email and key in the app; there is no emailed invitation or public registration. Keep keys out of Git, support messages and deploy logs. The app verifies key possession, not mailbox ownership. For a lost key generate a new pair, replace only that email's hash and redeploy. Its old key and active sessions cease working. Browser sessions last 12 hours; signing out revokes the current session. Provision the real credentials yourself; none ship in this repo.
+Each run prints a new, random 256-bit private sign-in key and its SHA-256 verification hash. Give only that person's key to them using a password manager's secure share. They use their exact approved email and key in the app; there is no emailed invitation or public registration. Keep keys out of Git, support messages and deploy logs. The app verifies key possession, not mailbox ownership. For a lost key generate a new pair, replace only that email's hash and redeploy. Its old key and active sessions cease working. Signed-in admins can generate replacement keys on their phone under **Settings → Set up a sign-in key**. Save the new key separately in the password manager until the owner activates its verification hash. Confirm you can sign in with the replacement before deleting the old entry. Browser sessions last 12 hours; signing out revokes the current session. Provision the real credentials yourself; none ship in this repo.
 
 **Set these variables on the app service:**
 

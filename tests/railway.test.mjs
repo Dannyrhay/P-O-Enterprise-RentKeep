@@ -65,6 +65,9 @@ test("Railway HTTP: four identities share persisted records, enforce origin, rev
         .status,
       401,
     );
+    const files = ["/key-setup.html", "/key-setup.js"];
+    for (const path of files)
+      assert.equal((await fetch(base + path)).status, 401);
     const cookies = [];
     for (let i = 0; i < 4; i++) {
       const res = await post("login", { email: emails[i], key: keys[i] });
@@ -95,7 +98,19 @@ test("Railway HTTP: four identities share persisted records, enforce origin, rev
       (await (await get(cookies[0])).json()).data.rooms[0].name,
       "Shared test",
     );
+    for (const path of files) {
+      const response = await fetch(base + path, {
+        headers: { cookie: cookies[1] },
+      });
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+    }
     assert.equal((await post("logout", {}, cookies[1])).status, 204);
+    for (const path of files)
+      assert.equal(
+        (await fetch(base + path, { headers: { cookie: cookies[1] } })).status,
+        401,
+      );
     assert.equal((await get(cookies[1])).status, 401);
     env.ADMIN_KEY_HASHES = JSON.stringify({
       ...hashes,

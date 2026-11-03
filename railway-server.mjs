@@ -15,7 +15,6 @@ const types = {
   webmanifest: "application/manifest+json",
 };
 export function createApp({
-  setupOnly = false,
   origin,
   auth = makeAuth(),
   db = database,
@@ -37,16 +36,27 @@ export function createApp({
       try {
         const path = req.url.split("?")[0];
         if (path === "/healthz") {
-          if (!setupOnly) await ready();
+          await ready();
           res.end("ready");
           return;
         }
-        if (setupOnly && path === "/") {
-          res.writeHead(302, { Location: "/key-setup.html" }).end();
-          return;
-        }
-        if (setupOnly && !["/key-setup.html", "/key-setup.js"].includes(path)) {
-          res.writeHead(503).end();
+        if (path === "/key-setup.html" || path === "/key-setup.js") {
+          if (!["GET", "HEAD"].includes(req.method)) {
+            res.writeHead(405).end();
+            return;
+          }
+          await auth.verify(
+            new Request(new URL(path, origin), { headers: req.headers }),
+            getAdmins(),
+          );
+          const data = await readFile(
+            new URL("./backend" + path, import.meta.url),
+          );
+          res.setHeader(
+            "Content-Type",
+            path.endsWith(".js") ? types.js : types.html,
+          );
+          res.end(req.method === "HEAD" ? undefined : data);
           return;
         }
         if (path.startsWith("/api/")) {
@@ -159,19 +169,18 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const setupOnly = process.env.RENTKEEP_SETUP_ONLY === "true";
-  if (!setupOnly) credentials();
+  credentials();
   const origin = new URL(
     process.env.PUBLIC_ORIGIN ||
       "https://" + (process.env.RAILWAY_PUBLIC_DOMAIN || ""),
   ).origin;
   if (!origin.startsWith("https://"))
     throw Error("A public HTTPS origin is required");
-  const app = createApp({ origin, setupOnly });
+  const app = createApp({ origin });
   let running,
     closing = false;
   function tick() {
-    if (setupOnly || closing || running) return;
+    if (closing || running) return;
     running = reminders()
       .catch(() =>
         console.error(
@@ -193,7 +202,7 @@ if (
     clearInterval(timer);
     app.close(async () => {
       await running;
-      if (!setupOnly) await database().end();
+      await database().end();
     });
   }
   process.once("SIGTERM", stop);

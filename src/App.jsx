@@ -978,6 +978,13 @@ export default function App({ live = null }) {
           title="Settings"
           description="Manage access details and renewal reminders for your family team."
         />
+        {live?.keySetupUrl && (
+          <p className="mb-5">
+            <a className="underline" href={live.keySetupUrl}>
+              Set up a sign-in key
+            </a>
+          </p>
+        )}
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -1756,8 +1763,9 @@ export default function App({ live = null }) {
                 <Button
                   variant="outline"
                   onClick={async () => {
-                    const { renderToStaticMarkup } =
-                      await import("react-dom/server");
+                    const { renderToStaticMarkup } = await import(
+                      "react-dom/server"
+                    );
                     download(
                       (payment?.receipt || docInvoice.number) + ".html",
                       `<!doctype html><html><head><meta charset="utf-8"><title>RentKeep document</title><style>body{font:15px system-ui;max-width:700px;margin:40px auto;padding:20px;color:#24372d}h1{font-size:28px}p{line-height:1.7}hr{border:0;border-top:1px solid #ddd;margin:25px 0}</style></head><body>${renderToStaticMarkup(docContent)}</body></html>`,
