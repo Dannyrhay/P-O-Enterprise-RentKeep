@@ -122,3 +122,12 @@ test("Railway HTTP: four identities share persisted records, enforce origin, rev
     await pg.close();
   }
 });
+
+test("initial single administrator requires its own matching hash",()=>{
+ const env={ADMIN_EMAILS:"owner@example.test",ADMIN_KEY_HASHES:JSON.stringify({"owner@example.test":"a".repeat(64)})};
+ assert.equal(administrators(env).length,1);
+ assert.equal(Object.keys(credentials(env)).length,1);
+ assert.throws(()=>credentials({...env,ADMIN_KEY_HASHES:"{}"}));
+ assert.throws(()=>administrators({ADMIN_EMAILS:""}));
+ assert.throws(()=>administrators({ADMIN_EMAILS:"a@b.test,a@b.test"}));
+});

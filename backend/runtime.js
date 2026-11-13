@@ -6,11 +6,11 @@ export function administrators(env = process.env) {
     .split(",")
     .map((s) => s.trim().toLowerCase());
   if (
-    raw.length !== 4 ||
-    new Set(raw).size !== 4 ||
+    raw.length < 1 || raw.length > 4 ||
+    new Set(raw).size !== raw.length ||
     raw.some((x) => !z.email().safeParse(x).success)
   )
-    throw Error("Configure four distinct administrator emails.");
+    throw Error("Configure one to four distinct administrator emails.");
   return raw.map((email, i) => ({
     id: email,
     name: roles[i],

@@ -12,11 +12,11 @@ export function credentials(env = process.env) {
   const admins = administrators(env),
     hashes = JSON.parse(env.ADMIN_KEY_HASHES || "{}");
   if (
-    Object.keys(hashes).length !== 4 ||
-    new Set(Object.values(hashes)).size !== 4 ||
+    Object.keys(hashes).length !== admins.length ||
+    new Set(Object.values(hashes)).size !== admins.length ||
     !admins.every((a) => /^[a-f0-9]{64}$/.test(hashes[a.email]))
   )
-    throw Error("Configure four distinct administrator key hashes.");
+    throw Error("Configure a distinct key hash for every administrator.");
   return hashes;
 }
 export function makeAuth(db = database, keys = credentials) {
